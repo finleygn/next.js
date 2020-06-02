@@ -7,13 +7,14 @@ import { printAndExit } from '../server/lib/utils'
 import { startedDevelopmentServer } from '../build/output'
 import { cliCommand } from '../bin/next'
 
-const nextDev: cliCommand = argv => {
+const nextDev: cliCommand = (argv) => {
   const args = arg(
     {
       // Types
       '--help': Boolean,
       '--port': Number,
       '--hostname': String,
+      '--http2': Boolean,
 
       // Aliases
       '-h': '--help',
@@ -40,11 +41,13 @@ const nextDev: cliCommand = argv => {
         --port, -p      A port number on which to start the application
         --hostname, -H  Hostname on which to start the application
         --help, -h      Displays this message
+        --http2         Enables http2 connections
     `)
     process.exit(0)
   }
 
   const dir = resolve(args._[0] || '.')
+  const http2 = !!args['--http2']
 
   // Check if pages dir exists and warn if not
   if (!existsSync(dir)) {
@@ -57,14 +60,14 @@ const nextDev: cliCommand = argv => {
   startedDevelopmentServer(appUrl)
 
   startServer(
-    { dir, dev: true, isNextDevCommand: true },
+    { dir, http2, dev: true, isNextDevCommand: true },
     port,
     args['--hostname']
   )
-    .then(async app => {
+    .then(async (app) => {
       await app.prepare()
     })
-    .catch(err => {
+    .catch((err) => {
       if (err.code === 'EADDRINUSE') {
         let errorMessage = `Port ${port} is already in use.`
         const pkgAppPath = require('next/dist/compiled/find-up').sync(
@@ -76,7 +79,7 @@ const nextDev: cliCommand = argv => {
         const appPackage = require(pkgAppPath)
         if (appPackage.scripts) {
           const nextScript = Object.entries(appPackage.scripts).find(
-            scriptLine => scriptLine[1] === 'next'
+            (scriptLine) => scriptLine[1] === 'next'
           )
           if (nextScript) {
             errorMessage += `\nUse \`npm run ${nextScript[0]} -- -p <some other port>\`.`

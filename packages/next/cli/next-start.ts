@@ -6,13 +6,14 @@ import startServer from '../server/lib/start-server'
 import { cliCommand } from '../bin/next'
 import * as Log from '../build/output/log'
 
-const nextStart: cliCommand = argv => {
+const nextStart: cliCommand = (argv) => {
   const args = arg(
     {
       // Types
       '--help': Boolean,
       '--port': Number,
       '--hostname': String,
+      '--http2': Boolean,
 
       // Aliases
       '-h': '--help',
@@ -39,21 +40,24 @@ const nextStart: cliCommand = argv => {
         --port, -p      A port number on which to start the application
         --hostname, -H  Hostname on which to start the application
         --help, -h      Displays this message
+        --http2         Enables http2 connections
     `)
     process.exit(0)
   }
 
   const dir = resolve(args._[0] || '.')
   const port = args['--port'] || 3000
-  startServer({ dir }, port, args['--hostname'])
-    .then(async app => {
+  const http2 = !!args['--http2']
+
+  startServer({ dir, http2 }, port, args['--hostname'])
+    .then(async (app) => {
       // tslint:disable-next-line
       Log.ready(
         `started server on http://${args['--hostname'] || 'localhost'}:${port}`
       )
       await app.prepare()
     })
-    .catch(err => {
+    .catch((err) => {
       // tslint:disable-next-line
       console.error(err)
       process.exit(1)
